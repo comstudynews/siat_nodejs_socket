@@ -3,18 +3,62 @@ const socket = io();
 const myFace = document.getElementById("myFace");
 const muteBtn = document.getElementById("mute");
 const cameraBtn = document.getElementById("camera");
+const cameraSelect = document.getElementById("cameras");
 
 let myStream;
 let muted = false;
 let cameraOff = false;
 
-async function getMedia() {
+async function getCameras() {
     try {
-        myStream = await navigator.mediaDevices.getUserMedia({
-            audio: true, video:true
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        //console.log(devices);
+        // videoinput, audiooutput, audioinput
+        let audiooutputs = devices.filter((device)=>{
+            return device.kind === 'audiooutput';
         });
-        console.log(myStream);
+        let videoinputs = devices.filter((device)=>{
+            return device.kind === 'videoinput';
+        });
+        let audioinputs = devices.filter((device)=>{
+            return device.kind === 'audioinput';
+        });
+        //console.log(audiooutputs);
+        //console.log(videoinputs);
+        //console.log(audioinputs);
+        videoinputs.push(videoinputs[0])
+        videoinputs.forEach((camera)=>{
+            //console.log(camera);
+            const optionTag = document.createElement("option");
+            optionTag.innerText = camera.label;
+            optionTag.value = camera.deviceId;
+            cameraSelect.appendChild(optionTag);
+        });
+    } catch(e) {
+        console.log(e);
+    }
+}
+
+async function getMedia(deviceId) {
+    const constrains = {
+        audio: false, 
+        video:{facingMode: "user"}
+    };
+
+    const cameraConstrains = {
+        audio: false, 
+        video:{deviceId : {exact : deviceId}}
+    };
+
+    try {
+        myStream = await navigator.mediaDevices.getUserMedia(
+            deviceId ? cameraConstrains : constrains
+        );
+        //console.log(myStream);
         myFace.srcObject = myStream;
+        if(!deviceId) {
+            await getCameras();
+        }
     } catch(e) {
         console.log(e);
     }
@@ -50,4 +94,9 @@ cameraBtn.addEventListener('click', function() {
         cameraBtn.innerText = "Turn Camera Off";
         cameraOff = false;
     }
+});
+
+cameraSelect.addEventListener('change', async function(event){
+    console.log(this.value);
+    await getMedia(this.value)
 });
