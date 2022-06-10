@@ -11,6 +11,7 @@ app.get("/", (req, res)=>res.render("home"))
 app.get("/*", (req, res)=> res.redirect("/"));
 
 const server = http.createServer(app);
+const wsSocket = SocketIO(server);
 server.listen(app.get("port"), ()=> {
     console.log(`listening on http://localhost:${app.get("port")}`);
 });
